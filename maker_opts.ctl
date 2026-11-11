@@ -24,7 +24,7 @@ protein_gff=  #aligned protein homology evidence from an external GFF3 file
 
 #-----Repeat Masking (leave values blank to skip repeat masking)
 model_org= #select a model organism for DFam masking in RepeatMasker
-rmlib= /data/users/awidmer/genome_annotation_course/output/01_EDTA/assembly_flye.fasta.mod.EDTA.TElib.fa# Absolute path to your EDTA TE library FASTA
+rmlib= /data/users/awidmer/genome_annotation_course/output/01_EDTA/assembly_flye.fasta.mod.EDTA.TElib.fa # Absolute path to your EDTA TE library FASTA
 repeat_protein=/data/courses/genome_annotation_resources/2026/data/PTREP20
 rm_gff= #pre-identified repeat elements from an external GFF3 file
 prok_rm=0 #forces MAKER to repeatmask prokaryotes (no reason to change this), 1 = yes, 0 = no

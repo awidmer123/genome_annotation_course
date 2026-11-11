@@ -1,11 +1,11 @@
 #!/bin/bash
-#SBATCH --job-name=copying
+#SBATCH --job-name=rename
 #SBATCH --partition=pibu_el8
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=20
-#SBATCH --mem=64G
-#SBATCH --time=09:00:00
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=32G
+#SBATCH --time=02:00:00
 #SBATCH --account=class-sbl-30004-ws-2026
 #SBATCH --reservation=class-sbl-30004-2026-10-28
 #SBATCH --output=logs/11_%x_%j.out
@@ -14,7 +14,8 @@
 #SBATCH --mail-user=andri.widmer@unifr.ch
 
 # setting paths
-OUTDIR="$WORKDIR/output/MAKER"
+WORKDIR="/data/users/awidmer/genome_annotation_course"
+OUTDIR="$WORKDIR/output/09_MAKER"
 FINALDIR="$OUTDIR/final"
 mkdir -p "$FINALDIR/tmp"
 cd "$OUTDIR"
