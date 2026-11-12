@@ -3,4 +3,4 @@ logs/
 data/
 output/
 plots/
-Rplots*
+*.pdf
