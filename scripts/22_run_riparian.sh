@@ -33,7 +33,7 @@ GENESPACE_SIF="$COURSEDIR/containers/genespace_latest.sif"
 ANALYSIS_SIF="$COURSEDIR/containers/Annotation_analysis_R4.4.sif"
 # -----------------------------------------
 
-# Scaffolds, die verdreht aussehen, hier eintragen (nach dem 1. Plot), sonst leer lassen
+# Scaffolds that seemed flipped
 FLIPS=()
 
 TMPDIR_HOST="$OUTDIR/GENESPACE_R_tmp"
@@ -41,4 +41,4 @@ mkdir -p "$TMPDIR_HOST"
 apptainer exec --cleanenv \
     --bind /data --bind "$WORKDIR" \
     --bind "$TMPDIR_HOST":/temp --env TMPDIR=/temp --pwd "$WORKDIR" \
-    "$GENESPACE_SIF" Rscript "$WORKDIR/scripts/22-riparian.R" "$GENESPACE_DIR" "$ACCESSION" "${FLIPS[@]}"
+    "$GENESPACE_SIF" Rscript "$WORKDIR/scripts/22_riparian.R" "$GENESPACE_DIR" "$ACCESSION" "${FLIPS[@]}"
