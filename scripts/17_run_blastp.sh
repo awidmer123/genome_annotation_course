@@ -36,30 +36,44 @@ mkdir -p "$OUTDIR/tmp"
 cd "$OUTDIR"
 module load BLAST+/2.15.0-gompi-2021a
 
-# 1. Both Searches parallel (DBs are already indexed)
-blastp -query "$PROTEINS" -db "$UNIPROT" -num_threads 10 -outfmt 6 \
-    -evalue 1e-5 -max_target_seqs 10 -out blastp_uniprot.tsv &
-uniprot_job=$!
-blastp -query "$PROTEINS" -db "$TAIR10" -num_threads 10 -outfmt 6 \
-    -evalue 1e-5 -max_target_seqs 10 -out blastp_TAIR10.tsv &
-tair_job=$!
-wait "$uniprot_job"
-wait "$tair_job"
+# 1. Both searches in parallel (DBs are already indexed); skipped if results exist
+if [[ -s blastp_uniprot.tsv && -s blastp_TAIR10.tsv ]]; then
+    echo "BLAST results found, skipping searches"
+else
+    blastp -query "$PROTEINS" -db "$UNIPROT" -num_threads 10 -outfmt 6 \
+        -evalue 1e-5 -max_target_seqs 10 -out blastp_uniprot.tsv &
+    uniprot_job=$!
+    blastp -query "$PROTEINS" -db "$TAIR10" -num_threads 10 -outfmt 6 \
+        -evalue 1e-5 -max_target_seqs 10 -out blastp_TAIR10.tsv &
+    tair_job=$!
+    wait "$uniprot_job"
+    wait "$tair_job"
+fi
 
-# 2. Best hit per Query
+# 2. Best hit per query
 for ref in uniprot TAIR10; do
     sort -k1,1 -k12,12gr -k11,11g "blastp_${ref}.tsv" | awk -F '\t' '!seen[$1]++' \
         > "blastp_${ref}.besthits.tsv"
 done
 
-# 3. UniProt-functions to gff3 and fasta
+# 2b. BLAST+ 2.15 reports bare UniProt accessions (Q9LX89), but maker_functional_*
+#     look up the full ID (sp|Q9LX89|FB255_ARATH). Without remapping,
+#     maker_functional_fasta silently writes "Protein of unknown function" everywhere
+#     and maker_functional_gff crashes ("Can't use string ("") as a HASH ref").
+awk -F'\t' -v OFS='\t' '
+  NR==FNR { if (/^>/) { id=substr($1,2); split(id,a,"|"); full[a[2]]=id }; next }
+  { if ($2 in full) $2=full[$2]; print }' \
+  <(cut -d' ' -f1 "$UNIPROT") blastp_uniprot.besthits.tsv \
+  > blastp_uniprot.besthits.fullid.tsv
+
+# 3. UniProt functions to gff3 and fasta
 MAKER="apptainer exec --cleanenv --env TMPDIR=/tmp --bind /data --bind $WORKDIR --bind $OUTDIR/tmp:/tmp --pwd $OUTDIR $MAKER_SIF"
-$MAKER maker_functional_fasta "$UNIPROT" blastp_uniprot.besthits.tsv "$PROTEINS" \
+$MAKER maker_functional_fasta "$UNIPROT" blastp_uniprot.besthits.fullid.tsv "$PROTEINS" \
     > maker_proteins.filtered.Uniprot.fasta
-$MAKER maker_functional_gff "$UNIPROT" blastp_uniprot.besthits.tsv "$GENES" \
+$MAKER maker_functional_gff "$UNIPROT" blastp_uniprot.besthits.fullid.tsv "$GENES" \
     > filtered.genes.Uniprot.gff3
 
-# 4. numbers for guiding question -> blastp_summary.txt
+# 4. numbers for guiding questions -> blastp_summary.txt
 {
     total=$(grep -c '>' "$PROTEINS")
     echo "Proteine total:        $total"
@@ -69,12 +83,12 @@ $MAKER maker_functional_gff "$UNIPROT" blastp_uniprot.besthits.tsv "$GENES" \
     done
 
     # how many of the best hits are "uncharacterized"?
-    cut -f2 blastp_uniprot.besthits.tsv | sort -u > uniprot_hit_ids.txt
+    cut -f2 blastp_uniprot.besthits.fullid.tsv | sort -u > uniprot_hit_ids.txt
     unchar=$(grep '>' "$UNIPROT" | sed 's/^>//' | awk 'NR==FNR{h[$1];next} ($1 in h)' uniprot_hit_ids.txt - \
              | grep -ci 'uncharacterized' || true)
     echo "UniProt-Besthits mit 'Uncharacterized': $unchar"
 
-    # length bias: Proteins with vs. without UniProt-Hit
+    # length bias: proteins with vs. without UniProt hit
     echo; echo "Proteinlänge (aa): Gruppe  n  Median  Mittel"
     awk '/^>/{if(id)print id"\t"len; id=substr($1,2); len=0; next}{len+=length($0)} END{print id"\t"len}' "$PROTEINS" \
       | awk -F'\t' 'NR==FNR{hit[$1];next}{g=($1 in hit)?"hit":"no_hit"; print g"\t"$2}' \
