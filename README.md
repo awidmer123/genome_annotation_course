@@ -42,6 +42,7 @@ Submit every `.sh` script from the project root: `sbatch scripts/<script>.sh`.
 | | `20_run_genespace.sh` (`19_genespace.R`) | GENESPACE (OrthoFinder + MCScanX) and pan-gene table | `GENESPACE/results`, `pangenes/` |
 | | `21_run_process_pangenome.sh/.R` | Core / dispensable / accession-specific entries, copy-variable core entries (all vs. syntenic genes) | `GENESPACE/process_pangenome/` |
 | | `22_run_riparian.sh/.R` | Riparian synteny plots (Mh-0 vs. TAIR10, all five genomes) | `GENESPACE/processed_riparian/` |
+| | `23_report_figures.sh/.R` | `Additional plots for report (e.g. extended TE superfamilies)` | `report/graphics/` |
 
 \* `09_run_maker.sh` writes to `output/MAKER`; this folder was renamed to `output/09_MAKER` before running step 10.
 
